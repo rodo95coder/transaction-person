@@ -1,8 +1,15 @@
 package com.nttdata.bootcamp.services.impl;
 
+import java.math.BigDecimal;
+import java.util.function.Function;
+
+import com.nttdata.bootcamp.exceptions.TypeTransactionException;
+import com.nttdata.bootcamp.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nttdata.bootcamp.models.TransactionPerson;
 import com.nttdata.bootcamp.models.products.SavingAccount;
@@ -15,13 +22,22 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
-public class TransactionPersonImpl implements ITransactionPersonService {
+public class TransactionPersonImpl implements ITransactionPersonService{
 	
 	@Autowired
 	ITransactionPersonRepo tprepo;
 	
 	@Autowired
 	private RestTemplate clientRest;
+	
+	private WebClient customerServiceClient = WebClient.builder().baseUrl("http://localhost:8024").build();
+
+	private Function<Mono<SavingAccount>, Mono<SavingAccount>>
+			updateSavingAccount = (objeto) -> customerServiceClient.patch()
+			.uri("/savingAccount/update")
+			.body(objeto, SavingAccount.class)
+			.retrieve()
+			.bodyToMono(SavingAccount.class);
 
 	@Override
 	public Flux<TransactionPerson> findAll() {
@@ -34,14 +50,30 @@ public class TransactionPersonImpl implements ITransactionPersonService {
 	}
 
 	@Override
-	public Mono<TransactionPerson> save(TransactionPerson transactionPerson) {
-		SavingAccount savingAccount =clientRest.getForObject("http://localhost:8024/savingAccount/findById/"+transactionPerson.getIdProduct(), SavingAccount.class);
-		System.out.println(savingAccount);
-		int newamount = Integer.parseInt(transactionPerson.getAmount())  + Integer.parseInt(savingAccount.getAccountingBalance());
-		savingAccount.setAccountingBalance(String.valueOf(newamount));
-		SavingAccount samodicated = clientRest.patchForObject("http://localhost:8024/savingAccount/update", savingAccount,SavingAccount.class);
-		log.info("a product was modificated"+samodicated.getId());
-		return tprepo.save(transactionPerson);
+	public Mono<TransactionPerson> save(TransactionPerson transactionPerson){
+
+		Mono<SavingAccount> savingAccount = customerServiceClient.get()
+				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(SavingAccount.class)
+				.flatMap(p->{
+					switch (transactionPerson.getTypeTransaction()){
+						case Constants.WITHDRAWAL:
+							p.withdrawal(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						case Constants.DEPOSIT:
+							p.deposit(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						default:
+							return Mono.error( new TypeTransactionException("The type transaction is incorret"));
+					}
+					return Mono.just(p);
+				});
+		
+		return updateSavingAccount.apply(savingAccount).flatMap(p->{
+			return tprepo.save(transactionPerson);
+		});
 	}
 
 	@Override
