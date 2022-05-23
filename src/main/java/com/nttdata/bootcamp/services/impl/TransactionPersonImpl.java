@@ -12,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nttdata.bootcamp.models.TransactionPerson;
-import com.nttdata.bootcamp.models.products.SavingAccount;
+import com.nttdata.bootcamp.models.products.*;
 import com.nttdata.bootcamp.repositories.ITransactionPersonRepo;
 import com.nttdata.bootcamp.services.ITransactionPersonService;
 
@@ -22,9 +22,10 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
-public class TransactionPersonImpl implements ITransactionPersonService{
+public class TransactionPersonImpl implements ITransactionPersonService {
 	
-	@Autowired
+  @Autowired
+	
 	ITransactionPersonRepo tprepo;
 	
 	@Autowired
@@ -50,8 +51,7 @@ public class TransactionPersonImpl implements ITransactionPersonService{
 	}
 
 	@Override
-	public Mono<TransactionPerson> save(TransactionPerson transactionPerson){
-
+	public Mono<TransactionPerson> saveSavingAccount(TransactionPerson transactionPerson) {
 		Mono<SavingAccount> savingAccount = customerServiceClient.get()
 				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
 				.accept(MediaType.APPLICATION_JSON)
@@ -76,6 +76,110 @@ public class TransactionPersonImpl implements ITransactionPersonService{
 		});
 	}
 
+	@Override
+	public Mono<TransactionPerson> saveBusinessCredit(TransactionPerson transactionPerson) {
+		Mono<SavingAccount> savingAccount = customerServiceClient.get()
+				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(SavingAccount.class)
+				.flatMap(p->{
+					switch (transactionPerson.getTypeTransaction()){
+						case Constants.WITHDRAWAL:
+							p.withdrawal(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						case Constants.DEPOSIT:
+							p.deposit(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						default:
+							return Mono.error( new TypeTransactionException("The type transaction is incorret"));
+					}
+					return Mono.just(p);
+				});
+		
+		return updateSavingAccount.apply(savingAccount).flatMap(p->{
+			return tprepo.save(transactionPerson);
+		});
+	}
+
+	@Override
+	public Mono<TransactionPerson> saveCurrentAccount(TransactionPerson transactionPerson) {
+		Mono<SavingAccount> savingAccount = customerServiceClient.get()
+				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(SavingAccount.class)
+				.flatMap(p->{
+					switch (transactionPerson.getTypeTransaction()){
+						case Constants.WITHDRAWAL:
+							p.withdrawal(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						case Constants.DEPOSIT:
+							p.deposit(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						default:
+							return Mono.error( new TypeTransactionException("The type transaction is incorret"));
+					}
+					return Mono.just(p);
+				});
+		
+		return updateSavingAccount.apply(savingAccount).flatMap(p->{
+			return tprepo.save(transactionPerson);
+		});
+	}
+
+	@Override
+	public Mono<TransactionPerson> saveFixedtermaccount(TransactionPerson transactionPerson) {
+		Mono<SavingAccount> savingAccount = customerServiceClient.get()
+				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(SavingAccount.class)
+				.flatMap(p->{
+					switch (transactionPerson.getTypeTransaction()){
+						case Constants.WITHDRAWAL:
+							p.withdrawal(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						case Constants.DEPOSIT:
+							p.deposit(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						default:
+							return Mono.error( new TypeTransactionException("The type transaction is incorret"));
+					}
+					return Mono.just(p);
+				});
+		
+		return updateSavingAccount.apply(savingAccount).flatMap(p->{
+			return tprepo.save(transactionPerson);
+		});
+	}
+
+	@Override
+	public Mono<TransactionPerson> savePersonalCredit(TransactionPerson transactionPerson) {
+		Mono<SavingAccount> savingAccount = customerServiceClient.get()
+				.uri("/savingAccount/findById/"+transactionPerson.getIdProduct())
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(SavingAccount.class)
+				.flatMap(p->{
+					switch (transactionPerson.getTypeTransaction()){
+						case Constants.WITHDRAWAL:
+							p.withdrawal(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						case Constants.DEPOSIT:
+							p.deposit(new BigDecimal(transactionPerson.getAmount()));
+							break;
+						default:
+							return Mono.error( new TypeTransactionException("The type transaction is incorret"));
+					}
+					return Mono.just(p);
+				});
+		
+		return updateSavingAccount.apply(savingAccount).flatMap(p->{
+			return tprepo.save(transactionPerson);
+		});
+	}
+	
 	@Override
 	public Mono<Void> delete(TransactionPerson transactionPerson) {
 		return tprepo.delete(transactionPerson);

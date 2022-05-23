@@ -37,9 +37,9 @@ public class TransactionPersonController {
 	}
 	
 	@PostMapping("/save")
-	public Mono<TransactionPerson> save(@RequestBody TransactionPerson transactionPerson){
+	public Mono<TransactionPerson> saveSavingAccount(@RequestBody TransactionPerson transactionPerson){
 		log.info("a TransactionPerson was created");
-		return tarepo.save(transactionPerson);
+		return tarepo.saveSavingAccount(transactionPerson);
 	}
 	
 	@DeleteMapping("/delete")

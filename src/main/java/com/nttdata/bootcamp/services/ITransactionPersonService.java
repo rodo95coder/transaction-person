@@ -8,6 +8,10 @@ import reactor.core.publisher.Mono;
 public interface ITransactionPersonService {
 	public Flux<TransactionPerson> findAll();
 	public Mono<TransactionPerson> findById(String id);
-	public Mono<TransactionPerson> save(TransactionPerson transactionPerson);
+	public Mono<TransactionPerson> saveSavingAccount(TransactionPerson transactionPerson);
+	public Mono<TransactionPerson> saveBusinessCredit(TransactionPerson transactionPerson);
+	public Mono<TransactionPerson> saveCurrentAccount(TransactionPerson transactionPerson);
+	public Mono<TransactionPerson> saveFixedtermaccount(TransactionPerson transactionPerson);
+	public Mono<TransactionPerson> savePersonalCredit(TransactionPerson transactionPerson);
 	public Mono<Void> delete(TransactionPerson transactionPerson);
 }
